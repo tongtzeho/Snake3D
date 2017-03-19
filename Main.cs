@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -70,6 +69,8 @@ public class Main : MonoBehaviour {
 
 	}
 
+	private float width_default = 640;
+	private float height_default = 960;
 	public static bool gamestart;
 	public int width, height;
 	public int leftbound, rightbound, upbound, downbound;
@@ -98,7 +99,7 @@ public class Main : MonoBehaviour {
 	public List<SnakeCell> snake;
 	public Quaternion []dir_rotation; // 0 right 1 up 2 left 3 down
 	public float gamespeed; // x second for 1 block
-	public bool lockleft, lockright, lockr;
+	public static bool lockleft, lockright, lockr;
 	public int snakeheadolddir;
 	public GameObject boardquad, behindcamera;
 	public bool judged, gameover, win;
@@ -218,9 +219,11 @@ public class Main : MonoBehaviour {
 	}
 
 	void getboardfromfile() {
-		StreamReader sr = new StreamReader("Assets/Map/map"+UIClick.level.ToString()+".txt");
+		TextAsset txtfile = (TextAsset)Resources.Load ("Map/map" + UIClick.level.ToString ());
+		string[] textall = txtfile.text.Split ('\n');
 		string line;
-		line = sr.ReadLine ().ToString ();
+		int linecntno = 0;
+		line = textall [linecntno++];
 		height = int.Parse (line.Split (' ') [0]);
 		width = int.Parse (line.Split (' ') [1]);
 		getbound ();
@@ -230,14 +233,14 @@ public class Main : MonoBehaviour {
 		string[] ele;
 		int i, j;
 		for (i = height - 1; i >= 0; i--) {
-			ele = sr.ReadLine ().ToString ().Split (' ');
+			ele = textall [linecntno++].ToString ().Split (' ');
 			for (j = 0; j < width; j++) {
 				board [j, i] = int.Parse(ele [j]);
 				belongbluelist [j, i] = -1;
 				boardgobj [j, i] = null;
 			}
 		}
-		ele = sr.ReadLine ().ToString ().Split (' ');
+		ele = textall [linecntno++].ToString ().Split (' ');
 		bluelist = new List<PosINT>[int.Parse (ele [0])];
 		needtoeat = int.Parse (ele [1]);
 		maxstep = int.Parse (ele [2]);
@@ -248,7 +251,7 @@ public class Main : MonoBehaviour {
 		for (i = 0; i < bluelist.Length; i++) {
 			eatenblue [i] = false;
 			existedblue [i] = false;
-			ele = sr.ReadLine ().ToString ().Split (' ');
+			ele = textall [linecntno++].ToString ().Split (' ');
 			int type = int.Parse (ele [0]);
 			int creatornum;
 			bluelist [i] = new List<PosINT> ();
@@ -271,7 +274,6 @@ public class Main : MonoBehaviour {
 				}
 			}
 		}
-		sr.Close ();
 	}
 
 	void createblue() {
@@ -424,7 +426,7 @@ public class Main : MonoBehaviour {
 		snakey = 0.25f;
 		dir_rotation = new Quaternion[4]{Quaternion.Euler(0f, 180f, 90f), Quaternion.Euler(0f, 90f, 90f), Quaternion.Euler(0f, 0f, 90f), Quaternion.Euler(0f, 270f, 90f)};
 		snakenextdir = 0;
-		gamespeed = 0.17f;
+		gamespeed = 0.3f - 0.05f * UIClick.diff;
 		eatennum = 0;
 		getboard ();
 		getsnake ();
@@ -753,7 +755,7 @@ public class Main : MonoBehaviour {
 			}
 		}
 		if (holdon == 0 && !ispause) {
-			if (Input.GetKey (KeyCode.R)) {
+			if (Input.GetKey (KeyCode.R) || (Input.touchCount > 0 && Input.touches [Input.touchCount - 1].position.y > Screen.height * 8 / 10)) {
 				if (!lockr) {
 					isoverlook = !isoverlook;
 					lockr = true;
@@ -761,14 +763,14 @@ public class Main : MonoBehaviour {
 			} else {
 				lockr = false;
 			}
-			if (Input.GetKey (KeyCode.A) || Input.GetKey (KeyCode.LeftArrow)) {
+			if (Input.GetKey (KeyCode.A) || Input.GetKey (KeyCode.LeftArrow) || (Input.touchCount > 0 && Input.touches [Input.touchCount - 1].position.x < Screen.width / 2 && Input.touches [Input.touchCount - 1].position.y > Screen.height / 10 && Input.touches [Input.touchCount - 1].position.y < Screen.height * 8 / 10)) {
 				if (!lockleft) {
 					snakenextdir = 1;
 					lockleft = true;
 				}
 			} else {
 				lockleft = false;
-				if (Input.GetKey (KeyCode.D) || Input.GetKey (KeyCode.RightArrow)) {
+				if (Input.GetKey (KeyCode.D) || Input.GetKey (KeyCode.RightArrow) || (Input.touchCount > 0 && Input.touches [Input.touchCount - 1].position.x > Screen.width / 2 && Input.touches [Input.touchCount - 1].position.y > Screen.height / 10 && Input.touches [Input.touchCount - 1].position.y < Screen.height * 8 / 10)) {
 					if (!lockright) {
 						snakenextdir = -1;
 						lockright = true;
@@ -828,7 +830,7 @@ public class Main : MonoBehaviour {
 	}
 
 	void updatebar() {
-		barfullrect.localPosition = new Vector3 (-85f * eatennum / needtoeat, -16f, 0);
+		barfullrect.localPosition = new Vector3 (-85f * eatennum / needtoeat * Screen.width/width_default, -16f * Screen.height/height_default, 0);
 		barfullrect.localScale = new Vector3 (1.0f - 1.0f * eatennum / needtoeat, 1f, 1f);
 	}
 }

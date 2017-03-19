@@ -5,14 +5,14 @@ using UnityEngine;
 
 public class UIClick : MonoBehaviour {
 
-	public GameObject mainui, selectui, pauseui, helpui, gameupui, gameclockui, endui, rankui;
+	public GameObject mainui, selectui, pauseui, helpui, gameupui, gameclockui, endui, rankui, diffui;
 	private UnityEngine.UI.Text endup, endscore, enddown, ranktext;
 	private GameObject game;
 	private Camera overlookcamera;
 	private bool ongame;
 	private float lockspace;
 	private float holdonlose, holdonwin;
-	public static int level, life, score;
+	public static int level, life, score, diff, dietime;
 	public static bool gameover, win;
 
 	void Start() {
@@ -22,6 +22,7 @@ public class UIClick : MonoBehaviour {
 		lockspace = 0;
 		life = 2;
 		score = 0;
+		dietime = 0;
 		holdonlose = holdonwin = -1;
 		gameover = false;
 		win = false;
@@ -33,6 +34,7 @@ public class UIClick : MonoBehaviour {
 		gameclockui = GameObject.Find ("Canvas/GameClock");
 		rankui = GameObject.Find ("Canvas/Rank");
 		endui = GameObject.Find ("Canvas/End");
+		diffui = GameObject.Find ("Canvas/Difficulty");
 		endup = GameObject.Find ("Canvas/End/Up").GetComponent<UnityEngine.UI.Text> ();
 		endscore = GameObject.Find ("Canvas/End/Score").GetComponent<UnityEngine.UI.Text> ();
 		enddown = GameObject.Find ("Canvas/End/Down").GetComponent<UnityEngine.UI.Text> ();
@@ -45,17 +47,19 @@ public class UIClick : MonoBehaviour {
 		gameclockui.SetActive (false);
 		endui.SetActive (false);
 		rankui.SetActive (false);
+		diffui.SetActive (false);
 	}
 
 	public void onStartButtonClick() {
 		mainui.SetActive (false);
-		selectui.SetActive (true);
+		selectui.SetActive (false);
 		pauseui.SetActive (false);
 		helpui.SetActive (false);
 		gameupui.SetActive (false);
 		gameclockui.SetActive (false);
 		endui.SetActive (false);
 		rankui.SetActive (false);
+		diffui.SetActive (true);
 	}
 
 	public void StartGame() {
@@ -65,6 +69,7 @@ public class UIClick : MonoBehaviour {
 		helpui.SetActive (false);
 		endui.SetActive (false);
 		rankui.SetActive (false);
+		diffui.SetActive (false);
 		lockspace = 0.3f;
 		overlookcamera.depth = -1;
 		Main.ispause = false;
@@ -74,6 +79,39 @@ public class UIClick : MonoBehaviour {
 		gameupui.SetActive (true);
 		gameclockui.SetActive (true);
 		ongame = true;
+	}
+
+	public void selectlevel() {
+		mainui.SetActive (false);
+		selectui.SetActive (true);
+		pauseui.SetActive (false);
+		helpui.SetActive (false);
+		gameupui.SetActive (false);
+		gameclockui.SetActive (false);
+		endui.SetActive (false);
+		rankui.SetActive (false);
+		diffui.SetActive (false);
+	}
+
+	public void onEasyButtonClick() {
+		diff = 1;
+		level = 1;
+		StartGame ();
+		//selectlevel ();
+	}
+
+	public void onMediumButtonClick() {
+		diff = 2;
+		level = 1;
+		StartGame ();
+		//selectlevel ();
+	}
+
+	public void onHardButtonClick() {
+		diff = 3;
+		level = 1;
+		StartGame ();
+		//selectlevel ();
 	}
 
 	public void onLevel1ButtonClick() {
@@ -101,7 +139,9 @@ public class UIClick : MonoBehaviour {
 		gameclockui.SetActive (true);
 		endui.SetActive (false);
 		rankui.SetActive (false);
+		diffui.SetActive (false);
 		Main.ispause = false;
+		Main.lockr = Main.lockleft = Main.lockright = true;
 	}
 
 	public void onBackButtonClick() {
@@ -112,6 +152,7 @@ public class UIClick : MonoBehaviour {
 		}
 		life = 2;
 		score = 0;
+		dietime = 0;
 		mainui.SetActive (true);
 		selectui.SetActive (false);
 		pauseui.SetActive (false);
@@ -120,6 +161,7 @@ public class UIClick : MonoBehaviour {
 		gameclockui.SetActive (false);
 		endui.SetActive (false);
 		rankui.SetActive (false);
+		diffui.SetActive (false);
 	}
 
 	public void onExitButtonClick() {
@@ -138,12 +180,25 @@ public class UIClick : MonoBehaviour {
 		helpui.SetActive (true);
 		endui.SetActive (false);
 		rankui.SetActive (false);
+		diffui.SetActive (false);
+	}
+
+	public string[] readscore() {
+		FileInfo t = new FileInfo(Application.persistentDataPath+"//Highsocre.txt");
+		if (!t.Exists) {
+			TextWriter tw = new StreamWriter(Application.persistentDataPath+"//Highsocre.txt");
+			tw.WriteLine ("500 400 300 200 100");
+			tw.Flush ();
+			tw.Close ();
+		}
+		StreamReader sr = File.OpenText(Application.persistentDataPath+"//Highsocre.txt");
+		string[] result = sr.ReadLine().Split(' ');
+		sr.Close ();
+		return result;
 	}
 
 	public void onRankButtonClick() {
-		StreamReader sr = new StreamReader("Assets/Record/Highscore.txt");
-		string[] line = sr.ReadLine ().ToString ().Split (' ');
-		sr.Close ();
+		string[] line = readscore ();
 		int i;
 		ranktext.text = "";
 		for (i = 0; i < 5; i++) {
@@ -158,12 +213,11 @@ public class UIClick : MonoBehaviour {
 		gameclockui.SetActive (false);
 		helpui.SetActive (false);
 		endui.SetActive (false);
+		diffui.SetActive (false);
 	}
 
 	private void updatescore(int score) {
-		StreamReader sr = new StreamReader("Assets/Record/Highscore.txt");
-		string[] line = sr.ReadLine ().ToString ().Split (' ');
-		sr.Close ();
+		string[] line = readscore ();
 		int[] nums = new int[6];
 		int k = 0;
 		bool usescore = false;
@@ -183,10 +237,10 @@ public class UIClick : MonoBehaviour {
 			}
 		}
 		if (k > 5) {
-			StreamWriter sw = new StreamWriter("Assets/Record/Highscore.txt");
-			sw.WriteLine (nums [0].ToString () + " " + nums [1].ToString () + " " + nums [2].ToString () + " " + nums [3].ToString () + " " + nums [4].ToString ());
-			sw.Flush ();
-			sw.Close ();
+			TextWriter tw = new StreamWriter(Application.persistentDataPath+"//Highsocre.txt");
+			tw.WriteLine (nums [0].ToString () + " " + nums [1].ToString () + " " + nums [2].ToString () + " " + nums [3].ToString () + " " + nums [4].ToString ());
+			tw.Flush ();
+			tw.Close ();
 		}
 	}
 
@@ -196,6 +250,7 @@ public class UIClick : MonoBehaviour {
 				ongame = false;
 				Destroy (game);
 				life--;
+				dietime++;
 				if (life > 0) {
 					StartGame ();
 				} else {
@@ -212,18 +267,21 @@ public class UIClick : MonoBehaviour {
 					pauseui.SetActive (false);
 					helpui.SetActive (false);
 					rankui.SetActive (false);
+					diffui.SetActive (false);
 					holdonlose = 2f;
 				}
 			} else if (win) {
 				ongame = false;
-				score += level * 100000;
+				int addscore = level * (1 + diff) * 5000 * (5 - Mathf.Min (4, dietime));
+				score += addscore;
 				Destroy (game);
 				overlookcamera.depth = 1;
+				dietime = 0;
 				if (level < 3) {
-					endup.text = "通过第" + level.ToString () + "关！\n得分 +" + level.ToString () + "00000";
+					endup.text = "通过第" + level.ToString () + "关！\n得分 +" + addscore.ToString();
 					enddown.text = "准备进入第" + (level + 1).ToString () + "关...";
 				} else {
-					endup.text = "恭喜你！全部通关！\n得分 +300000";
+					endup.text = "恭喜你！全部通关！\n得分 +" + addscore.ToString();
 					enddown.text = "准备返回主菜单...";
 					updatescore (score);
 				}
@@ -236,10 +294,11 @@ public class UIClick : MonoBehaviour {
 				pauseui.SetActive (false);
 				helpui.SetActive (false);
 				rankui.SetActive (false);
+				diffui.SetActive (false);
 				holdonwin = 2f;
 			}
 			lockspace = Mathf.Max (-0.001f, lockspace - Time.deltaTime);
-			if (lockspace <= 0 && Input.GetKey (KeyCode.Space)) {
+			if (lockspace <= 0 && (Input.GetKey (KeyCode.Space) || ((Input.touchCount > 0 && Input.touches [Input.touchCount - 1].position.x < Screen.width / 10 && Input.touches [Input.touchCount - 1].position.y < Screen.height / 10)))) {
 				lockspace = 0.3f;
 				if (!Main.ispause) {
 					Main.ispause = true;
@@ -251,6 +310,7 @@ public class UIClick : MonoBehaviour {
 					helpui.SetActive (false);
 					endui.SetActive (false);
 					rankui.SetActive (false);
+					diffui.SetActive (false);
 				} else {
 					gameupui.SetActive (true);
 					gameclockui.SetActive (true);
@@ -261,6 +321,7 @@ public class UIClick : MonoBehaviour {
 					Main.ispause = false;
 					endui.SetActive (false);
 					rankui.SetActive (false);
+					diffui.SetActive (false);
 				}
 			}
 		} else if (holdonlose > 0) {
@@ -269,6 +330,7 @@ public class UIClick : MonoBehaviour {
 				life = 2;
 				overlookcamera.depth = 1;
 				score = 0;
+				dietime = 0;
 				mainui.SetActive (true);
 				gameupui.SetActive (false);
 				gameclockui.SetActive (false);
@@ -277,6 +339,7 @@ public class UIClick : MonoBehaviour {
 				helpui.SetActive (false);
 				endui.SetActive (false);
 				rankui.SetActive (false);
+				diffui.SetActive (false);
 			}
 		} else if (holdonwin > 0) {
 			holdonwin -= Time.deltaTime;
@@ -288,6 +351,7 @@ public class UIClick : MonoBehaviour {
 					life = 2;
 					overlookcamera.depth = 1;
 					score = 0;
+					dietime = 0;
 					mainui.SetActive (true);
 					gameupui.SetActive (false);
 					gameclockui.SetActive (false);
@@ -296,6 +360,7 @@ public class UIClick : MonoBehaviour {
 					helpui.SetActive (false);
 					endui.SetActive (false);
 					rankui.SetActive (false);
+					diffui.SetActive (false);
 				}
 			}
 		}
