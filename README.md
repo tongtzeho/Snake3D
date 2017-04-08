@@ -14,4 +14,4 @@ Unity5 3D贪吃蛇（类似诺基亚S60V2贪吃蛇）
 
 支持平台：Windows、Linux、Android
 
-下载地址：http://pan.baidu.com/s/1o8NQHQy
+下载地址：http://pan.baidu.com/s/1pL8qFUV
