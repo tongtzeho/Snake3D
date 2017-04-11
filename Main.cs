@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 public class Main : MonoBehaviour {
@@ -18,6 +19,7 @@ public class Main : MonoBehaviour {
 		public float posx, posz;
 		public int dir;
 		public GameObject gobj;
+		public Transform tran;
 
 		public void getposfromdir() {
 			if (dir == 0) {
@@ -37,8 +39,7 @@ public class Main : MonoBehaviour {
 			posz = (float)prevz;
 		}
 
-		public float move(float gamespeed) {
-			float movelength = Time.deltaTime / gamespeed;
+		public float move(float movelength) {
 			if (dir == 0) {
 				posx += movelength;
 			} else if (dir == 1) {
@@ -98,7 +99,7 @@ public class Main : MonoBehaviour {
 	public int snakestartposx, snakestartposz, snakestartdir;
 	public List<SnakeCell> snake;
 	public Quaternion []dir_rotation; // 0 right 1 up 2 left 3 down
-	public float gamespeed; // x second for 1 block
+	public float gamespeed, movelength; // x second for 1 block
 	public static bool lockleft, lockright, lockr;
 	public int snakeheadolddir;
 	public GameObject boardquad, behindcamera;
@@ -118,6 +119,7 @@ public class Main : MonoBehaviour {
 	public int needtoeat, eatennum;
 	public int maxstep, stepcnt;
 	public Sprite[] sprt;
+	private SnakeCell snakehead, snakebody, snakebodyprev, snaketail, newsnaketail, oldsnaketail;
 
 	// Use this for initialization
 
@@ -244,11 +246,12 @@ public class Main : MonoBehaviour {
 		bluelist = new List<PosINT>[int.Parse (ele [0])];
 		needtoeat = int.Parse (ele [1]);
 		maxstep = int.Parse (ele [2]);
-		eatenblue = new bool[bluelist.Length];
-		existedblue = new bool[bluelist.Length];
-		creator = new List<int>[bluelist.Length];
-		objtype = new int[bluelist.Length];
-		for (i = 0; i < bluelist.Length; i++) {
+		int bluelen = bluelist.Length;
+		eatenblue = new bool[bluelen];
+		existedblue = new bool[bluelen];
+		creator = new List<int>[bluelen];
+		objtype = new int[bluelen];
+		for (i = 0; i < bluelen; i++) {
 			eatenblue [i] = false;
 			existedblue [i] = false;
 			ele = textall [linecntno++].ToString ().Split (' ');
@@ -284,7 +287,8 @@ public class Main : MonoBehaviour {
 			new Vector2 (0.125f, 0f)
 		};
 		int i, j, k;
-		for (i = 0; i < bluelist.Length; i++) {
+		int bluelen = bluelist.Length;
+		for (i = 0; i < bluelen; i++) {
 			if (!existedblue [i]) {
 				bool create = true;
 				if (creator [i].Count == 1 && creator [i] [0] == -1) {
@@ -349,7 +353,8 @@ public class Main : MonoBehaviour {
 	void resetblue(int x) {
 		if (x >= 0 && x < bluelist.Length) {
 			int i;
-			for (i = 0; i < bluelist [x].Count; i++) {
+			int bluexcnt = bluelist [x].Count;
+			for (i = 0; i < bluexcnt; i++) {
 				if ((board [bluelist [x] [i].x, bluelist [x] [i].z] & (1 << 10)) != 0) {
 					board [bluelist [x] [i].x, bluelist [x] [i].z] -= (1 << 10);
 				}
@@ -362,9 +367,11 @@ public class Main : MonoBehaviour {
 	void getboard() {
 		getboardfromfile ();
 		drawboardquad ();
-		int i, j;
+		int i, j, k;
+		bool [,]coverbigobstacle = new bool[width, height];
 		for (i = 0; i < width; i++) {
 			for (j = 0; j < height; j++) {
+				coverbigobstacle [i, j] = false;
 				if ((board [i, j] & (1 << 6)) != 0) {
 					snakestartposx = i;
 					snakestartposz = j;
@@ -373,8 +380,37 @@ public class Main : MonoBehaviour {
 					boardgobj [i, j] = Instantiate (Resources.Load ("SmallObstacle") as GameObject);
 					boardgobj [i, j].transform.position = new Vector3 (i + leftbound + 0.08f, -0.21f, j + downbound - 0.08f);
 				} else if ((board [i, j] & (1 << 4)) != 0) {
-					boardgobj [i, j] = Instantiate (Resources.Load ("BigObstacle") as GameObject);
-					boardgobj [i, j].transform.position = new Vector3 (i + leftbound, 0.4f, j + downbound);
+					
+					//boardgobj [i, j] = Instantiate (Resources.Load ("BigObstacle") as GameObject);
+					//boardgobj [i, j].transform.position = new Vector3 (i + leftbound, 0.4f, j + downbound);
+				}
+			}
+		}
+		for (i = 0; i < width; i++) {
+			for (j = 0; j < height; j++) {
+				if ((board [i, j] & (1 << 4)) != 0) {
+					if (!coverbigobstacle [i, j]) {
+						k = i;
+						while (k < width && (board [k, j] & (1 << 4)) != 0 && (!coverbigobstacle [k, j])) {
+							coverbigobstacle [k, j] = true;
+							k++;
+						}
+						if (k > i + 1) {
+							boardgobj [i, j] = Instantiate (Resources.Load ("BigObstacle") as GameObject);
+							boardgobj [i, j].transform.position = new Vector3 (0.5f * (i + k - 1) + leftbound, 0.4f, j + downbound);
+							boardgobj [i, j].transform.localScale = new Vector3 (k - i, 1, 1);
+						} else {
+							k = j;
+							coverbigobstacle [i, j] = false;
+							while (k < height && (board [i, k] & (1 << 4)) != 0 && (!coverbigobstacle [i, k])) {
+								coverbigobstacle [i, k] = true;
+								k++;
+							}
+							boardgobj [i, j] = Instantiate (Resources.Load ("BigObstacle") as GameObject);
+							boardgobj [i, j].transform.position = new Vector3 (i + leftbound, 0.4f, 0.5f * (j + k - 1) + downbound);
+							boardgobj [i, j].transform.localScale = new Vector3 (1, 1, k - j);
+						}
+					}
 				}
 			}
 		}
@@ -383,7 +419,7 @@ public class Main : MonoBehaviour {
 
 	void getsnake() {
 		snake = new List<SnakeCell> ();
-		SnakeCell snakehead = new SnakeCell ();
+		snakehead = new SnakeCell ();
 		snakehead.targetx = snakestartposx;
 		snakehead.targetz = snakestartposz;
 		snakeheadolddir = snakehead.dir = snakestartdir;
@@ -392,13 +428,14 @@ public class Main : MonoBehaviour {
 			board [snakehead.prevx, snakehead.prevz] |= (1 << 7);
 		}
 		snakehead.gobj = Instantiate (Resources.Load ("SnakeHead") as GameObject);
-		snakehead.gobj.transform.position = new Vector3 (snakehead.posx + leftbound, snakey, snakehead.posz + downbound);
-		snakehead.gobj.transform.rotation = dir_rotation [snakehead.dir];
+		snakehead.tran = snakehead.gobj.transform;
+		snakehead.tran.position = new Vector3 (snakehead.posx + leftbound, snakey, snakehead.posz + downbound);
+		snakehead.tran.rotation = dir_rotation [snakehead.dir];
 		snake.Add (snakehead);
 		int i;
 		for (i = 0; i < 4; i++) {
-			SnakeCell snakebody = new SnakeCell ();
-			SnakeCell snaketail = snake [snake.Count - 1];
+			snakebody = new SnakeCell ();
+			snaketail = snake [snake.Count - 1];
 			snakebody.targetx = snaketail.prevx;
 			snakebody.targetz = snaketail.prevz;
 			snakebody.dir = snaketail.dir;
@@ -407,15 +444,16 @@ public class Main : MonoBehaviour {
 				board [snakebody.prevx, snakebody.prevz] |= (1 << 7);
 			}
 			snakebody.gobj = Instantiate (Resources.Load ("SnakeBody") as GameObject);
+			snakebody.tran = snakebody.gobj.transform;
 			snakebody.gobj.name = "snakebody_" + snake.Count.ToString ();
-			snakebody.gobj.transform.position = new Vector3 (snakebody.posx + leftbound, snakey, snakebody.posz + downbound);
-			snakebody.gobj.transform.rotation = dir_rotation [snakebody.dir];
+			snakebody.tran.position = new Vector3 (snakebody.posx + leftbound, snakey, snakebody.posz + downbound);
+			snakebody.tran.rotation = dir_rotation [snakebody.dir];
 			snake.Add (snakebody);
 		}
 	}
 
 	void Awake() {
-		Application.targetFrameRate = 120;
+		Application.targetFrameRate = 60;
 	}
 
 	void Start () {
@@ -427,6 +465,7 @@ public class Main : MonoBehaviour {
 		dir_rotation = new Quaternion[4]{Quaternion.Euler(0f, 180f, 90f), Quaternion.Euler(0f, 90f, 90f), Quaternion.Euler(0f, 0f, 90f), Quaternion.Euler(0f, 270f, 90f)};
 		snakenextdir = 0;
 		gamespeed = 0.3f - 0.05f * UIClick.diff;
+		movelength = 1.0f / (Application.targetFrameRate * gamespeed);
 		eatennum = 0;
 		getboard ();
 		getsnake ();
@@ -446,9 +485,8 @@ public class Main : MonoBehaviour {
 
 	void movesnake() {
 		int i, k;
-		SnakeCell snakehead = snake [0];
-		SnakeCell snakebody, snakebodyprev;
-		float reach_rate = snakehead.move (gamespeed);
+		snakehead = snake [0];
+		float reach_rate = snakehead.move (movelength);
 		if (reach_rate > 0.5) {
 			if (reach_rate > 0.8) {
 				if (eraseblue) {
@@ -476,17 +514,18 @@ public class Main : MonoBehaviour {
 					eatenblue [prevblueindex] = true;
 					prevblueindex = -1;
 					if (snake.Count < 20) {
-						SnakeCell newsnaketail = new SnakeCell ();
-						SnakeCell oldsnaketail = snake [snake.Count - 1];
+						newsnaketail = new SnakeCell ();
+						oldsnaketail = snake [snake.Count - 1];
 						newsnaketail.targetx = newsnaketail.prevx = oldsnaketail.prevx;
 						newsnaketail.targetz = newsnaketail.prevz = oldsnaketail.prevz;
 						newsnaketail.dir = oldsnaketail.dir;
 						newsnaketail.posx = oldsnaketail.posx;
 						newsnaketail.posz = oldsnaketail.posz;
 						newsnaketail.gobj = Instantiate (Resources.Load ("SnakeBody") as GameObject);
+						newsnaketail.tran = newsnaketail.gobj.transform;
 						newsnaketail.gobj.name = "snakebody_" + snake.Count.ToString ();
-						newsnaketail.gobj.transform.position = new Vector3 (newsnaketail.posx + leftbound, snakey, newsnaketail.posz + downbound);
-						newsnaketail.gobj.transform.rotation = dir_rotation [newsnaketail.dir];
+						newsnaketail.tran.position = new Vector3 (newsnaketail.posx + leftbound, snakey, newsnaketail.posz + downbound);
+						newsnaketail.tran.rotation = dir_rotation [newsnaketail.dir];
 						snake.Add (newsnaketail);
 					}
 					createblue ();
@@ -526,7 +565,7 @@ public class Main : MonoBehaviour {
 						Sunlight.light_strength = 1.3f;
 						int cutlen = snake.Count >> 1;
 						for (i = 0; i < cutlen; i++) {
-							SnakeCell snaketail = snake [snake.Count - 1];
+							snaketail = snake [snake.Count - 1];
 							if ((board [snaketail.prevx, snaketail.prevz] & (1 << 7)) != 0) {
 								board [snaketail.prevx, snaketail.prevz] -= (1 << 7);
 							}
@@ -576,7 +615,7 @@ public class Main : MonoBehaviour {
 						Sunlight.light_strength = 0.9f;
 						int cutlen = 2;
 						for (i = 0; i < cutlen; i++) {
-							SnakeCell snaketail = snake [snake.Count - 1];
+							snaketail = snake [snake.Count - 1];
 							if ((board [snaketail.prevx, snaketail.prevz] & (1 << 7)) != 0) {
 								board [snaketail.prevx, snaketail.prevz] -= (1 << 7);
 							}
@@ -630,7 +669,7 @@ public class Main : MonoBehaviour {
 				judged = true;
 			}
 			// Enter the next block, judge whether the head hits something
-			if (reach_rate >= 1) {
+			if (reach_rate >= 0.999f) {
 				UIClick.score++;
 				stepcnt++;
 				int curclockid = stepcnt * 8 / maxstep;
@@ -659,7 +698,7 @@ public class Main : MonoBehaviour {
 				if (snakehead.prevx >= 0 && snakehead.prevz >= 0 && snakehead.prevx < width && snakehead.prevz < height) {
 					board [snakehead.prevx, snakehead.prevz] |= (1 << 7);
 				}
-				snakehead.gobj.transform.position = new Vector3 (snakehead.posx + leftbound, snakey, snakehead.posz + downbound);
+				snakehead.tran.position = new Vector3 (snakehead.posx + leftbound, snakey, snakehead.posz + downbound);
 				for (i = 1; i < snake.Count; i++) {
 					snakebodyprev = snake [i - 1];
 					snakebody = snake [i];
@@ -684,8 +723,8 @@ public class Main : MonoBehaviour {
 					} else {
 						snakebody.dir = 3;
 					}
-					snakebody.gobj.transform.position = new Vector3 (snakebody.posx + leftbound, snakey, snakebody.posz + downbound);
-					snakebody.gobj.transform.rotation = dir_rotation [snakebody.dir];
+					snakebody.tran.position = new Vector3 (snakebody.posx + leftbound, snakey, snakebody.posz + downbound);
+					snakebody.tran.rotation = dir_rotation [snakebody.dir];
 				}
 				snakeheadolddir = snakehead.dir;
 				if (snakenextdir != 0) {
@@ -711,38 +750,40 @@ public class Main : MonoBehaviour {
 				return;
 			}
 		}
-		snakehead.gobj.transform.position = new Vector3 (snakehead.posx + leftbound, snakey, snakehead.posz + downbound);
+		snakehead.tran.position = new Vector3 (snakehead.posx + leftbound, snakey, snakehead.posz + downbound);
 		for (i = 1; i < snake.Count; i++) {
 			snakebody = snake [i];
-			snakebody.move (gamespeed);
-			snakebody.gobj.transform.position = new Vector3 (snakebody.posx + leftbound, snakey, snakebody.posz + downbound);
+			snakebody.move (movelength);
+			snakebody.tran.position = new Vector3 (snakebody.posx + leftbound, snakey, snakebody.posz + downbound);
 		}
 		if (snakehead.dir != snakeheadolddir) {
 			if (snakehead.dir == snakeheadolddir + 1 || snakehead.dir == snakeheadolddir - 3) {
-				snakehead.gobj.transform.rotation = Quaternion.Euler (0f, -90 * snakeheadolddir + 180 - 90 * Mathf.Min (1, reach_rate * 1.0f), 90f);
+				snakehead.tran.rotation = Quaternion.Euler (0f, -90 * snakeheadolddir + 180 - 90 * Mathf.Min (1, reach_rate * 1.0f), 90f);
 			} else {
-				snakehead.gobj.transform.rotation = Quaternion.Euler (0f, -90 * snakeheadolddir + 180 + 90 * Mathf.Min (1, reach_rate * 1.0f), 90f);
+				snakehead.tran.rotation = Quaternion.Euler (0f, -90 * snakeheadolddir + 180 + 90 * Mathf.Min (1, reach_rate * 1.0f), 90f);
 			}
 		} else {
-			snakehead.gobj.transform.rotation = Quaternion.Euler (0f, -90 * snakeheadolddir + 180, 90f);
+			snakehead.tran.rotation = Quaternion.Euler (0f, -90 * snakeheadolddir + 180, 90f);
 		}
 	}
 
 	void setcamera() {
-		GameObject snakeheadobj = snake [0].gobj;
-		float angle = snakeheadobj.transform.localEulerAngles.y;
-		float radian = angle * Mathf.PI / 180f;
+		float angle = snake [0].tran.localEulerAngles.y;
+		float radian = angle * 0.01745329251f;
 		if (!isoverlook) {
-			behindcamera.transform.position = new Vector3 (snakeheadobj.transform.position.x + 1f * Mathf.Cos (radian), 5f, snakeheadobj.transform.position.z - 1f * Mathf.Sin (radian));
+			behindcamera.transform.position = new Vector3 (snake [0].tran.position.x + Mathf.Cos (radian), 5f, snake [0].tran.position.z - Mathf.Sin (radian));
 			behindcamera.transform.rotation = Quaternion.Euler (60f, angle - 90f, 0);
 		} else {
-			behindcamera.transform.position = new Vector3 (snakeheadobj.transform.position.x, 6f, snakeheadobj.transform.position.z);
+			behindcamera.transform.position = new Vector3 (snake [0].tran.position.x, 6f, snake [0].tran.position.z);
 			behindcamera.transform.rotation = Quaternion.Euler (90f, angle - 90f, 0);
 		}
 	}
 
 	// Update is called once per frame
 	void Update () {
+		if (Time.frameCount % 300 == 0) {
+			GC.Collect ();
+		}
 		if (holdon > 0) {
 			holdon -= Time.deltaTime;
 			if (holdon <= 0) {
@@ -830,7 +871,7 @@ public class Main : MonoBehaviour {
 	}
 
 	void updatebar() {
-		barfullrect.localPosition = new Vector3 (-85f * eatennum / needtoeat * Screen.width/width_default, -16f * Screen.height/height_default, 0);
+		barfullrect.localPosition = new Vector3 (-85f * eatennum / needtoeat * Screen.width / width_default, -16f * Screen.height / height_default, 0);
 		barfullrect.localScale = new Vector3 (1.0f - 1.0f * eatennum / needtoeat, 1f, 1f);
 	}
 }

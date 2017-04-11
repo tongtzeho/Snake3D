@@ -113,7 +113,7 @@ public class UIClick : MonoBehaviour {
 		StartGame ();
 		//selectlevel ();
 	}
-
+	/*
 	public void onLevel1ButtonClick() {
 		level = 1;
 		StartGame ();
@@ -127,7 +127,7 @@ public class UIClick : MonoBehaviour {
 	public void onLevel3ButtonClick() {
 		level = 3;
 		StartGame ();
-	}
+	}*/
 
 	public void onContinueButtonClick() {
 		lockspace = 0.3f;
