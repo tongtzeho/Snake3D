@@ -379,10 +379,6 @@ public class Main : MonoBehaviour {
 				} else if ((board [i, j] & (1 << 3)) != 0) {
 					boardgobj [i, j] = Instantiate (Resources.Load ("SmallObstacle") as GameObject);
 					boardgobj [i, j].transform.position = new Vector3 (i + leftbound + 0.08f, -0.21f, j + downbound - 0.08f);
-				} else if ((board [i, j] & (1 << 4)) != 0) {
-					
-					//boardgobj [i, j] = Instantiate (Resources.Load ("BigObstacle") as GameObject);
-					//boardgobj [i, j].transform.position = new Vector3 (i + leftbound, 0.4f, j + downbound);
 				}
 			}
 		}
@@ -577,7 +573,7 @@ public class Main : MonoBehaviour {
 								return;
 							}
 						}
-						snakehead.dir = (snakehead.dir + 3) % 4;
+						snakehead.dir = (snakehead.dir + 3) & 3;
 						snakehead.gettarget ();
 						if ((board [snakehead.targetx, snakehead.targetz] & ((1 << 7) | (1 << 4))) == 0) {
 							snakehead.posx = snakehead.prevx * 0.5f + snakehead.targetx * 0.5f;
@@ -585,7 +581,7 @@ public class Main : MonoBehaviour {
 							snakenextdir = 0;
 							lockleft = lockright = false;
 						} else {
-							snakehead.dir = (snakehead.dir + 2) % 4;
+							snakehead.dir = (snakehead.dir + 2) & 3;
 							snakehead.gettarget ();
 							if ((board [snakehead.targetx, snakehead.targetz] & ((1 << 7) | (1 << 4))) == 0) {
 								snakehead.posx = snakehead.prevx * 0.5f + snakehead.targetx * 0.5f;
@@ -593,7 +589,7 @@ public class Main : MonoBehaviour {
 								snakenextdir = 0;
 								lockleft = lockright = false;
 							} else {
-								snakehead.dir = (snakehead.dir + 1) % 4;
+								snakehead.dir = (snakehead.dir + 1) & 3;
 								snakehead.gettarget ();
 								if ((board [snakehead.targetx, snakehead.targetz] & ((1 << 7) | (1 << 4))) == 0) {
 									snakehead.posx = snakehead.prevx * 0.5f + snakehead.targetx * 0.5f;
@@ -601,7 +597,7 @@ public class Main : MonoBehaviour {
 									snakenextdir = 0;
 									lockleft = lockright = false;
 								} else {
-									snakehead.dir = (snakehead.dir + 2) % 4;
+									snakehead.dir = (snakehead.dir + 2) & 3;
 									snakehead.gettarget ();
 									Sunlight.light_strength = 3f;
 									gameover = true;
@@ -627,8 +623,7 @@ public class Main : MonoBehaviour {
 								return;
 							}
 						}
-						Destroy (boardgobj [snakehead.targetx, snakehead.targetz]);
-						boardgobj [snakehead.targetx, snakehead.targetz] = null;
+						boardgobj[snakehead.targetx, snakehead.targetz].transform.position = new Vector3 (snakehead.targetx + leftbound + 0.08f, -10f, snakehead.targetz + downbound - 0.08f);
 						board [snakehead.targetx, snakehead.targetz] -= (1 << 3);
 					}
 					if ((board [snakehead.targetx, snakehead.targetz] & (1 << 5)) != 0 && (board [snakehead.targetx, snakehead.targetz] & (1 << 10)) == 0) {
@@ -781,7 +776,7 @@ public class Main : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		if (Time.frameCount % 300 == 0) {
+		if ((Time.frameCount & 0x3ff) == 0) {
 			GC.Collect ();
 		}
 		if (holdon > 0) {

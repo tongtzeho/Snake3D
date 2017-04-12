@@ -7,8 +7,7 @@ public class UISize : MonoBehaviour {
 	private float width_default = 640;
 	private float height_default = 960;
 
-	// Use this for initialization
-	void Start () {
+	void Awake () {
 		RectTransform rt = GetComponent<RectTransform> ();
 		UnityEngine.UI.Text text = GetComponent<UnityEngine.UI.Text> ();
 		if (rt.sizeDelta.x != rt.sizeDelta.y) {
@@ -22,10 +21,5 @@ public class UISize : MonoBehaviour {
 		if (text != null) {
 			text.fontSize = (int)(text.fontSize * Mathf.Min (Screen.width / width_default, Screen.height / height_default));
 		}
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
 	}
 }
