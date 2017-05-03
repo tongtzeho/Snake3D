@@ -7,6 +7,7 @@ public class EatObject : MonoBehaviour {
 	private Transform thistrans;
 	private float timecnt;
 	private int updatecnt;
+	private Vector3 rotatev = new Vector3 (0f, 1f, 0f);
 
 	void Awake () {
 		thistrans = transform;
@@ -23,7 +24,7 @@ public class EatObject : MonoBehaviour {
 		updatecnt++;
 		timecnt += Time.deltaTime;
 		if (updatecnt >= 3) {
-			thistrans.RotateAround (thistrans.position, new Vector3 (0f, 1f, 0f), 220f * timecnt);
+			thistrans.RotateAround (thistrans.position, rotatev, 220f * timecnt);
 			timecnt = 0;
 			updatecnt = 0;
 		}

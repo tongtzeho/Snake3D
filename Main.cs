@@ -460,8 +460,8 @@ public class Main : MonoBehaviour {
 		snakey = 0.25f;
 		dir_rotation = new Quaternion[4]{Quaternion.Euler(0f, 180f, 90f), Quaternion.Euler(0f, 90f, 90f), Quaternion.Euler(0f, 0f, 90f), Quaternion.Euler(0f, 270f, 90f)};
 		snakenextdir = 0;
-		gamespeed = 0.3f - 0.05f * UIClick.diff;
-		movelength = 1.0f / (Application.targetFrameRate * gamespeed);
+		gamespeed = 0.26666666667f - 0.03333333333f * UIClick.diff;
+		movelength = 1.0f / gamespeed;
 		eatennum = 0;
 		getboard ();
 		getsnake ();
@@ -482,7 +482,8 @@ public class Main : MonoBehaviour {
 	void movesnake() {
 		int i, k;
 		snakehead = snake [0];
-		float reach_rate = snakehead.move (movelength);
+		float cur_movelength = Time.deltaTime * movelength;
+		float reach_rate = snakehead.move (cur_movelength);
 		if (reach_rate > 0.5) {
 			if (reach_rate > 0.8) {
 				if (eraseblue) {
@@ -664,7 +665,7 @@ public class Main : MonoBehaviour {
 				judged = true;
 			}
 			// Enter the next block, judge whether the head hits something
-			if (reach_rate >= 0.999f) {
+			if (reach_rate >= 0.99f) {
 				UIClick.score++;
 				stepcnt++;
 				int curclockid = stepcnt * 8 / maxstep;
@@ -748,7 +749,7 @@ public class Main : MonoBehaviour {
 		snakehead.tran.position = new Vector3 (snakehead.posx + leftbound, snakey, snakehead.posz + downbound);
 		for (i = 1; i < snake.Count; i++) {
 			snakebody = snake [i];
-			snakebody.move (movelength);
+			snakebody.move (cur_movelength);
 			snakebody.tran.position = new Vector3 (snakebody.posx + leftbound, snakey, snakebody.posz + downbound);
 		}
 		if (snakehead.dir != snakeheadolddir) {
@@ -766,7 +767,24 @@ public class Main : MonoBehaviour {
 		float angle = snake [0].tran.localEulerAngles.y;
 		float radian = angle * 0.01745329251f;
 		if (!isoverlook) {
-			behindcamera.transform.position = new Vector3 (snake [0].tran.position.x + Mathf.Cos (radian), 5f, snake [0].tran.position.z - Mathf.Sin (radian));
+			float c, s;
+			if (Mathf.Abs (radian) < 1e-8) {
+				c = 1;
+				s = 0;
+			} else if (Mathf.Abs (radian - 1.570796327f) < 1e-8) {
+				c = 0;
+				s = 1;
+			} else if (Mathf.Abs (radian - 3.141592654f) < 1e-8) {
+				c = -1;
+				s = 0;
+			} else if (Mathf.Abs (radian - 4.712388980f) < 1e-8) {
+				c = 0;
+				s = -1;
+			} else {
+				c = Mathf.Cos (radian);
+				s = Mathf.Sin (radian);
+			}
+			behindcamera.transform.position = new Vector3 (snake [0].tran.position.x + c, 5f, snake [0].tran.position.z - s);
 			behindcamera.transform.rotation = Quaternion.Euler (60f, angle - 90f, 0);
 		} else {
 			behindcamera.transform.position = new Vector3 (snake [0].tran.position.x, 6f, snake [0].tran.position.z);
