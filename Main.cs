@@ -120,6 +120,7 @@ public class Main : MonoBehaviour {
 	public int maxstep, stepcnt;
 	public Sprite[] sprt;
 	private SnakeCell snakehead, snakebody, snakebodyprev, snaketail, newsnaketail, oldsnaketail;
+	private string fill0 = "00000000";
 
 	// Use this for initialization
 
@@ -878,7 +879,8 @@ public class Main : MonoBehaviour {
 		if (UIClick.score >= 99999999) {
 			scoretext.text = "99999999";
 		} else {
-			scoretext.text = (UIClick.score / 10000000).ToString () + (UIClick.score / 1000000 % 10).ToString () + (UIClick.score / 100000 % 10).ToString () + (UIClick.score / 10000 % 10).ToString () + (UIClick.score / 1000 % 10).ToString () + (UIClick.score / 100 % 10).ToString () + (UIClick.score / 10 % 10).ToString () + (UIClick.score % 10).ToString ();
+			string temp = UIClick.score.ToString ();
+			scoretext.text = fill0.Substring (0, 8 - temp.Length) + temp;
 		}
 		factortext.text = factor.ToString ();
 	}
