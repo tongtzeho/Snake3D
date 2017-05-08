@@ -1,4 +1,4 @@
-Unity5 3D贪吃蛇（类似诺基亚S60V2贪吃蛇）
+Unity5.5 3D贪吃蛇游戏（类似诺基亚S60V2贪吃蛇）
 
 控制蛇吃蓝色能量块（连续吃）、绿色饼、橙色饼
 
@@ -12,4 +12,6 @@ Unity5 3D贪吃蛇（类似诺基亚S60V2贪吃蛇）
 
 操作：A/←/触摸左半部向左转，D/→/触摸右半部向右转，R/触摸上部切换视角，空格键/触摸左下角暂停
 
-支持平台：Windows、Linux、Android
+推荐开发环境：Windows 10 + DirectX 12 + Unity 5.5
+
+游戏支持平台：Windows、Linux、Android
