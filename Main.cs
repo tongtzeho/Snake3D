@@ -115,7 +115,7 @@ public class Main : MonoBehaviour {
 	public UnityEngine.UI.Text stageandlifetext, scoretext, factortext;
 	public RectTransform barfullrect;
 	public UnityEngine.UI.Image clockimg;
-	public int factor;
+	public int factor, prevfactor;
 	public int needtoeat, eatennum;
 	public int maxstep, stepcnt;
 	public Sprite[] sprt;
@@ -476,6 +476,7 @@ public class Main : MonoBehaviour {
 		eraseblue = eraseother = false;
 		holdon = 0.3f;
 		factor = 1;
+		prevfactor = 0;
 		stepcnt = 0;
 		getui ();
 	}
@@ -880,9 +881,15 @@ public class Main : MonoBehaviour {
 			scoretext.text = "99999999";
 		} else {
 			string temp = UIClick.score.ToString ();
-			scoretext.text = fill0.Substring (0, 8 - temp.Length) + temp;
+			if (fill0.Length > 8 - temp.Length) {
+				fill0 = fill0.Substring (0, 8 - temp.Length);
+			}
+			scoretext.text = fill0 + temp;
 		}
-		factortext.text = factor.ToString ();
+		if (factor != prevfactor) {
+			factortext.text = factor.ToString ();
+			prevfactor = factor;
+		}
 	}
 
 	void updatebar() {
